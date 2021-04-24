@@ -1,5 +1,6 @@
-input = ''"
-vkplsqwiftuazyje
+require 'set'
+
+input = ''"vkplsqwiftuazyje
 mokluxwbsfhgc
 
 tlfxgqinzmdju
@@ -2132,8 +2133,22 @@ oriqujavzntpblfw
 vmqltjciondkeb
 "''
 
-answers_count = input.split("\n\n").reduce(0) do |count, answers|
+groups_answers = input.split("\n\n")
+
+anyone_answers_count = groups_answers.reduce(0) do |count, answers|
   count + answers.tr("\n", '').split('').uniq.count
 end
 
-puts answers_count
+puts anyone_answers_count
+
+everyone_answers_count = groups_answers.reduce(0) do |count, answers|
+  group_answers = answers.split("\n").map do |answer|
+    answer.split("").to_set
+  end
+
+  common_answers = group_answers.reduce(&:intersection)
+
+  count + common_answers.length
+end
+
+puts everyone_answers_count
