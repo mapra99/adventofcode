@@ -1,5 +1,3 @@
-require 'byebug'
-
 input = [
   'light red bags contain 1 bright white bag, 2 muted yellow bags.',
   'dark orange bags contain 3 bright white bags, 4 muted yellow bags.',
@@ -19,7 +17,7 @@ class String
   end
 end
 
-class Bag
+class BagPack
   attr_reader :color, :capacity
 
   def initialize(color:, capacity: 0)
@@ -29,10 +27,11 @@ class Bag
 end
 
 class BagGraph
-  attr_reader :color_graph
+  attr_reader :color_graph, :container_graph
 
   def initialize(input)
     build_color_graph(input)
+    build_container_graph(input)
   end
 
   def traverse_nodes(node_key, traversed_nodes = [])
@@ -44,6 +43,15 @@ class BagGraph
     end
 
     traversed_nodes
+  end
+
+  def total_capacity(node_key, cum_total = 0)
+    contained_bags = container_graph[node_key]
+    return 0 if contained_bags.empty?
+
+    cum_total = contained_bags.reduce(0) do |cum_sum, bag|
+      cum_sum + bag.capacity + bag.capacity * total_capacity(bag.color, cum_total)
+    end
   end
 
   private
@@ -63,6 +71,15 @@ class BagGraph
     end
   end
 
+  def build_container_graph(input)
+    @container_graph = {}
+
+    input.each do |line|
+      line_bags = parse_line(line, only_colors: false)
+      @container_graph[line_bags[:container]] = line_bags[:contained]
+    end
+  end
+
   def parse_line(line, only_colors: true)
     container_bag = line[/^(\w+|\s){1,5}bags/].gsub(' bags', '').snake_case.to_sym
     contained_bags = line.scan(/((\d+)\s([\w+\s]+))/).map do |bag|
@@ -71,7 +88,7 @@ class BagGraph
       if only_colors
         color
       else
-        Bag.new(color: color, capacity: capacity)
+        BagPack.new(color: color, capacity: capacity)
       end
     end
 
@@ -84,3 +101,4 @@ end
 
 bags = BagGraph.new(input)
 puts bags.traverse_nodes(:shiny_gold).uniq.length - 1 # substracting 1 because the option of sending the initial bag unpackaged is not a solution
+puts bags.total_capacity(:shiny_gold)
