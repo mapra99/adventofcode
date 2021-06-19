@@ -93,7 +93,7 @@ class ProgramInterpreter
     puts "Running line #{@pointer} - #{@command.instruction}"
     @new_pointer = nil
 
-    raise LoopProgramError.new(state) if @executed_lines.include?(@pointer)
+    raise LoopProgramError, state if @executed_lines.include?(@pointer)
   end
 
   def after_command
@@ -113,6 +113,23 @@ class LoopProgramError < StandardError
   def message
     "Loop detected. Stopping execution. State: #{@state}"
   end
+end
+
+# THIS IS TERRIBLE... BUT WORKS HEHE
+nop_or_jmp = []
+script.each_with_index { |line, index| nop_or_jmp << index if line.start_with?('nop') || line.start_with?('jmp') }
+
+original_script = script.dup.map(&:dup)
+nop_or_jmp.each do |changeable_index|
+  interpreter = ProgramInterpreter.new(script)
+  interpreter.execute
+  puts interpreter.state
+  break
+rescue LoopProgramError
+  puts "trying again changing index #{changeable_index}"
+  script = original_script.dup.map(&:dup)
+  script[changeable_index][/^nop/] = 'jmp' if script[changeable_index][/^nop/]
+  script[changeable_index][/^jmp/] = 'nop' if script[changeable_index][/^jmp/]
 end
 
 interpreter = ProgramInterpreter.new(script)
