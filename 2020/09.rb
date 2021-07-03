@@ -1002,33 +1002,57 @@ input = %w[
 ].map(&:to_i)
 
 class Encoder
-  attr_reader :preamble
   def initialize(input, preamble_length = 25)
-    @input = input[preamble_length..-1]
-    @preamble = input[0...preamble_length]
+    @input = input
+    @preamble_length = preamble_length
   end
 
-  def validate_encoding
-    @input.each do |number|
+  def find_invalid_number
+    trimmed_input = @input[@preamble_length..-1]
+    preamble = @input[0...@preamble_length]
+
+    trimmed_input.each do |number|
       valid = false
-      @preamble.each_with_index do |num1, index|
+      preamble.each_with_index do |num1, index|
         num2 = number - num1
-        if @preamble.index(num2) && @preamble.index(num2) != index
+        if preamble.index(num2) && preamble.index(num2) != index
           puts "#{number} = #{num1} + #{num2}"
           valid = true
           break
         end
       end
 
-      @preamble.shift
-      @preamble.push(number)
+      preamble.shift
+      preamble.push(number)
       unless valid
+        @invalid_number = number
         puts "#{number} invalid"
         break
       end
     end
+
+    return @invalid_number
+  end
+
+  def find_weakness
+    min_index = 0
+    max_index = 0    
+
+    until @input[min_index..max_index].sum == @invalid_number
+      if @input[min_index..max_index].sum < @invalid_number
+        max_index += 1
+        puts "Enlarging sequence:[#{@input[min_index]}...#{@input[max_index]}]"
+      elsif @input[min_index..max_index].sum > @invalid_number
+        min_index += 1
+        puts "Reducing sequence: [#{@input[min_index]}...#{@input[max_index]}]"
+      end
+    end
+
+    puts "Found sequence: [#{@input[min_index]}...#{@input[max_index]}]"
+    puts "Weakness: #{@input[min_index..max_index].min + @input[min_index..max_index].max}"
   end
 end
 
 encoder = Encoder.new(input, 25)
-encoder.validate_encoding
+encoder.find_invalid_number
+encoder.find_weakness
