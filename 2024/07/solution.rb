@@ -3,12 +3,12 @@
 require 'byebug'
 
 class Equation
-  attr_reader :result, :operands_values, :operators, :root_operand
+  attr_reader :result, :operands_values, :results, :root_operand
 
   def initialize(result, operands_values)
     @result = result
     @operands_values = operands_values
-    @root_operand = build_operands_tree(operands_values)
+    @root_operand, @results = build_operands_tree(operands_values)
   end
 
   def self.read_file(file_path)
@@ -22,17 +22,8 @@ class Equation
     "Equation(#{result}: #{operands_values.join(' ')})"
   end
 
-  def find_operators(node = root_operand, operators = [])
-    if node.addition.nil? && node.multiplication.nil?
-      return false if node.value != result
-
-      puts "Equation #{inspect} can be satisfied with operators #{operators.join(' ')}"
-      operators
-    else
-      find_operators(node.addition, [*operators, :addition]) ||
-        find_operators(node.multiplication, [*operators, :multiplication]) ||
-        find_operators(node.concatenation, [*operators, :concatenation])
-    end
+  def find_operators
+    results.any? { |result_node| result_node.value == result }
   end
 
   private
@@ -47,29 +38,29 @@ class Equation
         node.add_operand(operand)
         new_stack << node.addition
         new_stack << node.multiplication
-        new_stack << node.concatenation
+        # new_stack << node.concatenation
       end
       stack = new_stack
     end
 
-    root
+    [root, stack]
   end
 end
 
 class OperandNode
-  attr_reader :value, :addition, :multiplication, :concatenation
+  attr_reader :value, :addition, :multiplication # , :concatenation
 
-  def initialize(value, addition: nil, multiplication: nil, concatenation: nil)
+  def initialize(value, addition: nil, multiplication: nil) # , concatenation: nil)
     @value = value
     @addition = addition
     @multiplication = multiplication
-    @concatenation = concatenation
+    # @concatenation = concatenation
   end
 
   def add_operand(new_operand)
     @addition = OperandNode.new(value + new_operand)
     @multiplication = OperandNode.new(value * new_operand)
-    @concatenation = OperandNode.new("#{value}#{new_operand}".to_i)
+    # @concatenation = OperandNode.new("#{value}#{new_operand}".to_i)
   end
 end
 
